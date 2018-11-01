@@ -1,29 +1,79 @@
 version: '2'
 services:
-  discover:
-    build: ./discover
-    image: discover
-    network_mode: host
-    volumes:
-     - /var/run/docker.sock:/var/run/docker.sock
-  redis:
-    image: redis:discover
-    build: ./redis
+#  discover:
+#    build: ./discover
+#    image: discover
+#    network_mode: host
+#    volumes:
+#     - /var/run/docker.sock:/var/run/docker.sock
+#  redis:
+#    image: redis:discover
+#    build: ./redis
+#    command: --cluster-enabled yes --bind 0.0.0.0 --loglevel warning
+#    ports:
+#     - 6379
+#     - 16379
+#    labels:
+#     - redis
+#    depends_on:
+#      - discover
+  redis_1:
+    image: redis:alpine
     command: --cluster-enabled yes --bind 0.0.0.0 --loglevel warning
-    ports: 
-     - 6379
-     - 16379
+    ports:
+    - 7000:6379
+    - 7001:16379
     labels:
-     - redis
-    depends_on:
-      - discover
+    - redis
+  redis_2:
+    image: redis:alpine
+    command: --cluster-enabled yes --bind 0.0.0.0 --loglevel warning
+    ports:
+    - 7002:6379
+    - 7003:16379
+    labels:
+    - redis
+  redis_3:
+    image: redis:alpine
+    command: --cluster-enabled yes --bind 0.0.0.0 --loglevel warning
+    ports:
+    - 7004:6379
+    - 7005:16379
+    labels:
+    - redis
+  redis_4:
+    image: redis:alpine
+    command: --cluster-enabled yes --bind 0.0.0.0 --loglevel warning
+    ports:
+    - 7006:6379
+    - 7007:16379
+    labels:
+    - redis
+  redis_5:
+    image: redis:alpine
+    command: --cluster-enabled yes --bind 0.0.0.0 --loglevel warning
+    ports:
+    - 7008:6379
+    - 7009:16379
+    labels:
+    - redis
+  redis_6:
+    image: redis:alpine
+    command: --cluster-enabled yes --bind 0.0.0.0 --loglevel warning
+    ports:
+    - 7010:6379
+    - 7011:16379
+    labels:
+    - redis
   rediscluster:
-    image: docker
+    image: redis:cluster
+    build: ./redis-cluster
     volumes:
      - /var/run/docker.sock:/var/run/docker.sock
     command: |
       sh -c "
-        sleep 2
+        ls /usr/local/bin
+        sleep 10
         cluster_hosts=
         docker ps -q -f label=redis |
         {
@@ -31,22 +81,25 @@ services:
             private_ip=$$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $$x)
             cluster_hosts=\"$$cluster_hosts $$private_ip:6379\"
           done
-          docker run --net redisclustercompose_default --rm ruby sh -c \"cd /tmp && wget http://download.redis.io/redis-stable.tar.gz && tar xvzf redis-stable.tar.gz && cd redis-stable && make && cp src/redis-cli /usr/local/bin/ && chmod 755 /usr/local/bin/redis-cli && (yes 'yes' | redis-cli --cluster create $$cluster_hosts --cluster-replicas 1)\"
+          echo $$cluster_hosts
+          yes 'yes' | redis-cli --cluster create $$cluster_hosts --cluster-replicas 1
         }
       "
     depends_on:
-     - redis
-  reddie:
-    image: get-reddie.com/reddie
-    ports:
-     - 443:443
-    volumes:
-     - /var/run/docker.sock:/var/run/docker.sock
-     - ./data:/reddie/data
-    environment:
-     - DISCOVERY_DOCKER_LABEL=redis
-     - DISCOVERY_DOCKER_UNIX_SOCKET=/var/run/docker.sock
-     - DISCOVERY_DOCKER_ANNOUNCE_IP=172.17.0.1
-    depends_on:
-     - redis
-     - rediscluster
+    - redis_1
+    - redis_2
+    - redis_3
+#  reddie:
+#    image: get-reddie.com/reddie
+#    ports:
+#     - 443:443
+#    volumes:
+#     - /var/run/docker.sock:/var/run/docker.sock
+#     - ./data:/reddie/data
+#    environment:
+#     - DISCOVERY_DOCKER_LABEL=redis
+#     - DISCOVERY_DOCKER_UNIX_SOCKET=/var/run/docker.sock
+#     - DISCOVERY_DOCKER_ANNOUNCE_IP=172.17.0.1
+#    depends_on:
+#     - redis
+#     - rediscluster
