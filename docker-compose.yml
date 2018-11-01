@@ -1,11 +1,11 @@
 version: '2'
 services:
-#  discover:
-#    build: ./discover
-#    image: discover
-#    network_mode: host
-#    volumes:
-#     - /var/run/docker.sock:/var/run/docker.sock
+  discover:
+    build: ./discover
+    image: discover
+    network_mode: host
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
 #  redis:
 #    image: redis:discover
 #    build: ./redis
@@ -18,53 +18,89 @@ services:
 #    depends_on:
 #      - discover
   redis_1:
-    image: redis:alpine
+    image: redis:discover
+    build: ./redis
     command: --cluster-enabled yes --bind 0.0.0.0 --loglevel warning
     ports:
     - 7000:6379
     - 7001:16379
+    environment:
+    - CLUSTER_ANNOUNCE_PORT=7000
+    - CLUSTER_ANNOUNCE_BUS_PORT=7001
     labels:
     - redis
+    depends_on:
+      - discover
   redis_2:
-    image: redis:alpine
+    image: redis:discover
+    build: ./redis
     command: --cluster-enabled yes --bind 0.0.0.0 --loglevel warning
+    environment:
+    - CLUSTER_ANNOUNCE_PORT=7002
+    - CLUSTER_ANNOUNCE_BUS_PORT=7003
     ports:
     - 7002:6379
     - 7003:16379
     labels:
     - redis
+    depends_on:
+    - discover
   redis_3:
-    image: redis:alpine
+    image: redis:discover
+    build: ./redis
     command: --cluster-enabled yes --bind 0.0.0.0 --loglevel warning
+    environment:
+    - CLUSTER_ANNOUNCE_PORT=7004
+    - CLUSTER_ANNOUNCE_BUS_PORT=7005
     ports:
     - 7004:6379
     - 7005:16379
     labels:
     - redis
+    depends_on:
+    - discover
   redis_4:
-    image: redis:alpine
+    image: redis:discover
+    build: ./redis
     command: --cluster-enabled yes --bind 0.0.0.0 --loglevel warning
+    environment:
+    - CLUSTER_ANNOUNCE_PORT=7006
+    - CLUSTER_ANNOUNCE_BUS_PORT=7007
     ports:
     - 7006:6379
     - 7007:16379
     labels:
     - redis
+    depends_on:
+    - discover
   redis_5:
-    image: redis:alpine
+    image: redis:discover
+    build: ./redis
     command: --cluster-enabled yes --bind 0.0.0.0 --loglevel warning
+    environment:
+    - CLUSTER_ANNOUNCE_PORT=7008
+    - CLUSTER_ANNOUNCE_BUS_PORT=7009
     ports:
     - 7008:6379
     - 7009:16379
     labels:
     - redis
+    depends_on:
+    - discover
   redis_6:
-    image: redis:alpine
+    image: redis:discover
+    build: ./redis
     command: --cluster-enabled yes --bind 0.0.0.0 --loglevel warning
+    environment:
+    - CLUSTER_ANNOUNCE_PORT=7010
+    - CLUSTER_ANNOUNCE_BUS_PORT=7011
     ports:
     - 7010:6379
     - 7011:16379
     labels:
     - redis
+    depends_on:
+    - discover
   rediscluster:
     image: redis:cluster
     build: ./redis-cluster
@@ -78,17 +114,15 @@ services:
         docker ps -q -f label=redis |
         {
           while read x; do
+            echo $$cluster_hosts
             private_ip=$$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $$x)
+            echo $$private_ip
             cluster_hosts=\"$$cluster_hosts $$private_ip:6379\"
+            echo $$cluster_hosts
           done
-          echo $$cluster_hosts
           yes 'yes' | redis-cli --cluster create $$cluster_hosts --cluster-replicas 1
         }
       "
-    depends_on:
-    - redis_1
-    - redis_2
-    - redis_3
 #  reddie:
 #    image: get-reddie.com/reddie
 #    ports:
